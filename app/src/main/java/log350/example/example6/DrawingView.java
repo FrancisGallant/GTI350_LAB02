@@ -220,6 +220,13 @@ public class DrawingView extends View {
 		arrayList.add( new Point2D(650,700) );
 		shapeContainer.addShape( arrayList );
 		arrayList.clear();
+		arrayList.add( new Point2D(450,1000) );
+		arrayList.add( new Point2D(750,1400) );
+		arrayList.add( new Point2D(950,1600) );
+		arrayList.add( new Point2D(850,1100) );
+		arrayList.add( new Point2D(650,1100) );
+		shapeContainer.addShape( arrayList );
+		arrayList.clear();
 	}
 	
 	
@@ -352,10 +359,10 @@ public class DrawingView extends View {
 								Point2D p_pixels = new Point2D(x, y);
 								Point2D p_world = gw.convertPixelsToWorldSpaceUnits(p_pixels);
 								indexOfShapeBeingManipulated = shapeContainer.indexOfShapeContainingGivenPoint(p_world);
-								if (lassoButton.contains(p_pixels)) {
+								if (lassoButton.contains(p_pixels)){
 									currentMode = MODE_LASSO;
 									cursor.setType(MyCursor.TYPE_BUTTON);
-								} else if (deleteButton.contains(p_pixels)) {
+								}else if (deleteButton.contains(p_pixels)) {
 									currentMode = MODE_SUPPRIMER;
 									cursor.setType(MyCursor.TYPE_BUTTON);
 								} else if (indexOfShapeBeingManipulated >= 0) {
@@ -444,25 +451,43 @@ public class DrawingView extends View {
 							Point2D p_world = gw.convertPixelsToWorldSpaceUnits(p_pixels);
 							int index = shapeContainer.indexOfShapeContainingGivenPoint(p_world);
 
-
-							if (type == MotionEvent.ACTION_UP){
-								if (index != -1) {
-
-									shapeContainer.shapes.remove(index);
-									for (int i = 0; i < selectedShapes.size(); ++i) {
-										Shape s = selectedShapes.get(i);
-										if (s.contains(p_world)) {
-											selectedShapes.remove(i);
-										}
-									}
-								}
-
-
-								cursorContainer.removeCursorByIndex(cursorIndex);
-								if (cursorContainer.getNumCursors() == 0) {
-									currentMode = MODE_NEUTRAL;
+							ArrayList< Point2D > points = new ArrayList< Point2D >();
+							AlignedRectangle2D rect = new AlignedRectangle2D();
+							for ( Shape s : selectedShapes ) {
+								for ( Point2D p : s.getPoints() ) {
+									points.add( p );
+									rect.bound( p );
 								}
 							}
+							points = Point2DUtil.computeConvexHull( points );
+							points = Point2DUtil.computeExpandedPolygon( points, rect.getDiagonal().length()/30 );
+
+
+							if (type == MotionEvent.ACTION_UP) {
+								//Cas où on clique sur une forme, on supprime que la forme
+								if (index != -1) {
+
+									Shape s = shapeContainer.shapes.get(index);
+;									shapeContainer.shapes.remove(s);
+									selectedShapes.remove(s);
+
+
+								//Cas où on clique dans la selection, on supprime toute la selection
+								} else if (Point2DUtil.isPointInsidePolygon(points, p_world)) {
+
+								     for (int i = 0; i < selectedShapes.size(); ++i) {
+									     Shape s = selectedShapes.get(i);
+									     shapeContainer.shapes.remove(s);
+									 }
+									 selectedShapes.clear();
+
+
+								}
+							    cursorContainer.removeCursorByIndex(cursorIndex);
+							    if (cursorContainer.getNumCursors() == 0) {
+								    currentMode = MODE_NEUTRAL;
+								}
+					        }
 							break;
 					}
 
