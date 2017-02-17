@@ -29,7 +29,6 @@ public class Log350Example6Activity extends Activity {
         //Setting the view
         drawView = new DrawingView(this);        
         setContentView(drawView);
-        
         drawView.requestFocus();
     }
 }

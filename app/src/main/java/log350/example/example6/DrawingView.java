@@ -11,6 +11,7 @@ import android.graphics.Canvas;
 //import android.graphics.Path;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -173,12 +174,14 @@ public class DrawingView extends View {
 	ShapeContainer shapeContainer = new ShapeContainer();
 	ArrayList< Shape > selectedShapes = new ArrayList< Shape >();
 	CursorContainer cursorContainer = new CursorContainer();
+    ArrayList<Point2D> cpoints = new ArrayList<Point2D>();
 
 	static final int MODE_NEUTRAL = 0; // the default mode
 	static final int MODE_CAMERA_MANIPULATION = 1; // the user is panning/zooming the camera
 	static final int MODE_SHAPE_MANIPULATION = 2; // the user is translating/rotating/scaling a shape
 	static final int MODE_LASSO = 3; // the user is drawing a lasso to select shapes
 	static final int MODE_SUPPRIMER = 4; // the user is deleting the select shape
+	static final int MODE_ADDFORME = 5; // the user is adding a shape
 	int currentMode = MODE_NEUTRAL;
 
 	// This is only used when currentMode==MODE_SHAPE_MANIPULATION, otherwise it is equal to -1
@@ -186,6 +189,7 @@ public class DrawingView extends View {
 
 	MyButton lassoButton = new MyButton( "Lasso", 10, 70, 140, 140 );
 	MyButton deleteButton = new MyButton("Suppr" , 10, 230 , 140, 140);
+	MyButton createButton = new MyButton("create", 10, 390, 140, 140);
 
 	OnTouchListener touchListener;
 	
@@ -266,6 +270,8 @@ public class DrawingView extends View {
 		deleteButton.draw (gw, currentMode == MODE_SUPPRIMER);
 
 		lassoButton.draw( gw, currentMode == MODE_LASSO );
+
+        createButton.draw(gw, currentMode == MODE_ADDFORME);
 
 		if ( currentMode == MODE_LASSO ) {
 			MyCursor lassoCursor = cursorContainer.getCursorByType( MyCursor.TYPE_DRAGGING, 0 );
@@ -355,6 +361,8 @@ public class DrawingView extends View {
 
 					switch (currentMode) {
 						case MODE_NEUTRAL:
+                            Log.d("Debug", "in NEUTRAL");
+                            cpoints = new ArrayList<Point2D>();
 							if (cursorContainer.getNumCursors() == 1 && type == MotionEvent.ACTION_DOWN) {
 								Point2D p_pixels = new Point2D(x, y);
 								Point2D p_world = gw.convertPixelsToWorldSpaceUnits(p_pixels);
@@ -365,7 +373,11 @@ public class DrawingView extends View {
 								}else if (deleteButton.contains(p_pixels)) {
 									currentMode = MODE_SUPPRIMER;
 									cursor.setType(MyCursor.TYPE_BUTTON);
-								} else if (indexOfShapeBeingManipulated >= 0) {
+								}else if(createButton.contains(p_pixels)){
+                                    currentMode = MODE_ADDFORME;
+                                    cursor.setType(MyCursor.TYPE_BUTTON);
+                                }
+                                else if (indexOfShapeBeingManipulated >= 0) {
 									currentMode = MODE_SHAPE_MANIPULATION;
 									cursor.setType(MyCursor.TYPE_DRAGGING);
 								} else {
@@ -374,6 +386,31 @@ public class DrawingView extends View {
 								}
 							}
 							break;
+                        case MODE_ADDFORME:
+                            Log.d("Debug", "in addForme");
+                            if(cursorContainer.getNumCursors() > 3 && type == MotionEvent.ACTION_MOVE){
+                                for(int i = 0 ; i < cursorContainer.getNumCursors()-1 ; i++){
+                                    System.out.println(cursorContainer.getNumCursors());
+                                    Point2D cursorPoint = gw.convertPixelsToWorldSpaceUnits(cursorContainer.getCursorById(i+1).getCurrentPosition());
+                                    if(cpoints.size() < cursorContainer.getNumCursors()-1)
+                                        cpoints.add(i,cursorPoint);
+                                    else
+                                        cpoints.set(i,cursorPoint);
+                                }
+                                cpoints = Point2DUtil.computeConvexHull( cpoints );
+
+                            }else if (type == MotionEvent.ACTION_UP ) {
+
+                                if(cpoints.size() != 0)
+                                    shapeContainer.addShape(cpoints);
+                                cpoints = new ArrayList<Point2D>();
+                                cursorContainer.removeCursorByIndex(cursorIndex);
+                                if (cursorContainer.getNumCursors() == 0)
+                                    currentMode = MODE_NEUTRAL;
+
+                            }
+
+                            break;
 						case MODE_CAMERA_MANIPULATION:
 							if (cursorContainer.getNumCursors() == 2 && type == MotionEvent.ACTION_MOVE) {
 								MyCursor cursor0 = cursorContainer.getCursorByIndex(0);
