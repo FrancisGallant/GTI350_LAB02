@@ -1,18 +1,34 @@
 
 package log350.example.example6;
 
+import android.text.Spannable;
+
 import java.util.ArrayList;
 
 class ShapeContainer {
 	public ArrayList< Shape > shapes = new ArrayList< Shape >();
 
-	public Shape getLastShape() {return shapes.get(shapes.size()-1);}
+	public Shape getLastShape() {
+		if(shapes.size() >0)
+			return shapes.get(shapes.size()-1);
+		return null;
+	}
 
 	public Shape getShape( int index ) { return shapes.get(index); }
 
 	public void addShape( ArrayList< Point2D > points /* in world space */ ) {
 		Shape s = new Shape( points );
 		shapes.add( s );
+	}
+
+	public void replaceShape(ArrayList< Point2D > points){
+		Shape s = new Shape(points);
+		if(shapes.size() > 0 ){
+			shapes.set(0,s);
+		}
+		else{
+			shapes.add(s);
+		}
 	}
 
 	// returns -1 if no shape contains the given point

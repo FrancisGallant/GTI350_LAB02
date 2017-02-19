@@ -172,6 +172,7 @@ public class DrawingView extends View {
 	GraphicsWrapper gw = new GraphicsWrapper();
 
 	ShapeContainer shapeContainer = new ShapeContainer();
+    ShapeContainer tempShape = new ShapeContainer();
 	ArrayList< Shape > selectedShapes = new ArrayList< Shape >();
 	CursorContainer cursorContainer = new CursorContainer();
     ArrayList<Point2D> cpoints = new ArrayList<Point2D>();
@@ -264,6 +265,8 @@ public class DrawingView extends View {
 
 		// draw all the shapes
 		shapeContainer.draw( gw, indexOfShapeBeingManipulated );
+
+        tempShape.draw(gw, indexOfShapeBeingManipulated);
 
 		gw.setCoordinateSystemToPixels();
 
@@ -398,20 +401,27 @@ public class DrawingView extends View {
 										cpoints.set(i, cursorPoint);
 								}
 								cpoints = Point2DUtil.computeConvexHull(cpoints);
-								if (cpoints.size() != 0) {
-									shapeContainer.addShape(cpoints);
+								if (cpoints.size() > 0) {
+									tempShape.replaceShape(cpoints);
 								}
 
                             }else if (type == MotionEvent.ACTION_UP ) {
+                                if(cursorContainer.getNumCursors() > 3 && tempShape.shapes.size() > 0){
+                                    shapeContainer.addShape(tempShape.shapes.get(tempShape.shapes.size()-1).getPoints());
+                                    tempShape = new ShapeContainer();
+                                }
+                                //shapeContainer.addShape(tempShape.shapes.get(tempShape.shapes.size()-1).getPoints());
+                                //tempShape = new ShapeContainer();
                                 cpoints = new ArrayList<Point2D>();
                                 cursorContainer.removeCursorByIndex(cursorIndex);
                                 if (cursorContainer.getNumCursors() == 0)
                                     currentMode = MODE_NEUTRAL;
 
                             }
+
 							//permet de manipuler une forme après sa création
-							if(cursorContainer.getNumCursors() > 2 && type == MotionEvent.ACTION_MOVE) {
-								Shape lastShape = shapeContainer.getLastShape();
+							if(cursorContainer.getNumCursors() > 2 && tempShape.getLastShape() != null && type == MotionEvent.ACTION_MOVE) {
+								Shape lastShape = tempShape.getLastShape();
 								MyCursor cursor0 = cursorContainer.getCursorByIndex(1);
 								MyCursor cursor1 = cursorContainer.getCursorByIndex(cursorContainer.getNumCursors()-1);
 
