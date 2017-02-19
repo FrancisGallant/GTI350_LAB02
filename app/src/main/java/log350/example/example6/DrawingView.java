@@ -387,28 +387,44 @@ public class DrawingView extends View {
 							}
 							break;
                         case MODE_ADDFORME:
-                            Log.d("Debug", "in addForme");
-                            if(cursorContainer.getNumCursors() > 3 && type == MotionEvent.ACTION_MOVE){
-                                for(int i = 0 ; i < cursorContainer.getNumCursors()-1 ; i++){
-                                    System.out.println(cursorContainer.getNumCursors());
-                                    Point2D cursorPoint = gw.convertPixelsToWorldSpaceUnits(cursorContainer.getCursorById(i+1).getCurrentPosition());
-                                    if(cpoints.size() < cursorContainer.getNumCursors()-1)
-                                        cpoints.add(i,cursorPoint);
-                                    else
-                                        cpoints.set(i,cursorPoint);
-                                }
-                                cpoints = Point2DUtil.computeConvexHull( cpoints );
+                            //Log.d("Debug", "in addForme");
+                            if(cursorContainer.getNumCursors() > 3 && type == MotionEvent.ACTION_DOWN) {
+								for (int i = 0; i < cursorContainer.getNumCursors() - 1; i++) {
+									System.out.println(cursorContainer.getNumCursors());
+									Point2D cursorPoint = gw.convertPixelsToWorldSpaceUnits(cursorContainer.getCursorById(i + 1).getCurrentPosition());
+									if (cpoints.size() < cursorContainer.getNumCursors() - 1)
+										cpoints.add(i, cursorPoint);
+									else
+										cpoints.set(i, cursorPoint);
+								}
+								cpoints = Point2DUtil.computeConvexHull(cpoints);
+								if (cpoints.size() != 0) {
+									shapeContainer.addShape(cpoints);
+								}
 
                             }else if (type == MotionEvent.ACTION_UP ) {
-
-                                if(cpoints.size() != 0)
-                                    shapeContainer.addShape(cpoints);
                                 cpoints = new ArrayList<Point2D>();
                                 cursorContainer.removeCursorByIndex(cursorIndex);
                                 if (cursorContainer.getNumCursors() == 0)
                                     currentMode = MODE_NEUTRAL;
 
                             }
+							//permet de manipuler une forme après sa création
+							if(cursorContainer.getNumCursors() > 2 && type == MotionEvent.ACTION_MOVE) {
+								Shape lastShape = shapeContainer.getLastShape();
+								MyCursor cursor0 = cursorContainer.getCursorByIndex(1);
+								MyCursor cursor1 = cursorContainer.getCursorByIndex(cursorContainer.getNumCursors()-1);
+
+
+
+								Point2DUtil.transformPointsBasedOnDisplacementOfTwoPoints(
+										lastShape.getPoints(),
+										gw.convertPixelsToWorldSpaceUnits(cursor0.getPreviousPosition()),
+										gw.convertPixelsToWorldSpaceUnits(cursor1.getPreviousPosition()),
+										gw.convertPixelsToWorldSpaceUnits(cursor0.getCurrentPosition()),
+										gw.convertPixelsToWorldSpaceUnits(cursor1.getCurrentPosition())
+								);
+							}
 
                             break;
 						case MODE_CAMERA_MANIPULATION:
