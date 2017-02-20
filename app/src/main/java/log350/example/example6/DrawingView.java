@@ -184,6 +184,7 @@ public class DrawingView extends View {
 	static final int MODE_SUPPRIMER = 4; // the user is deleting the select shape
 	static final int MODE_ADDFORME = 5; // the user is adding a shape
 	int currentMode = MODE_NEUTRAL;
+    boolean IS_SELECTED = false;
 
 	// This is only used when currentMode==MODE_SHAPE_MANIPULATION, otherwise it is equal to -1
 	int indexOfShapeBeingManipulated = -1;
@@ -469,19 +470,36 @@ public class DrawingView extends View {
 								);
 							}
 							else if (cursorContainer.getNumCursors() == 1 && selectedShapes.size() > 0 && type == MotionEvent.ACTION_MOVE) {
-								MyCursor cursor0 = cursorContainer.getCursorByIndex(0);
+                                MyCursor cursor0 = cursorContainer.getCursorByIndex(0);
+                                Point2D p_pixels = new Point2D(x, y);
+                                Point2D p_world = gw.convertPixelsToWorldSpaceUnits(p_pixels);
+                                int index = shapeContainer.indexOfShapeContainingGivenPoint(p_world);
 
-								for (int i = 0; i < selectedShapes.size(); i++) {
-									Shape shape = selectedShapes.get(i);
+                                ArrayList< Point2D > points = new ArrayList< Point2D >();
+                                AlignedRectangle2D rect = new AlignedRectangle2D();
+                                for ( Shape s : selectedShapes ) {
+                                    for ( Point2D p : s.getPoints() ) {
+                                        points.add( p );
+                                        rect.bound( p );
+                                    }
+                                }
+                                points = Point2DUtil.computeConvexHull( points );
+                                points = Point2DUtil.computeExpandedPolygon( points, rect.getDiagonal().length()/30 );
 
-									Point2DUtil.transformPointsBasedOnDisplacementOfTwoPoints(
-											shape.getPoints(),
-											gw.convertPixelsToWorldSpaceUnits(cursor0.getPreviousPosition()),
-											gw.convertPixelsToWorldSpaceUnits(cursor0.getPreviousPosition()),
-											gw.convertPixelsToWorldSpaceUnits(cursor0.getCurrentPosition()),
-											gw.convertPixelsToWorldSpaceUnits(cursor0.getCurrentPosition())
-									);
-								}
+                                if(Point2DUtil.isPointInsidePolygon(points,p_world)){
+                                    for (int i = 0; i < selectedShapes.size(); i++) {
+                                        Shape shape = selectedShapes.get(i);
+                                        Point2DUtil.transformPointsBasedOnDisplacementOfTwoPoints(
+                                                shape.getPoints(),
+                                                gw.convertPixelsToWorldSpaceUnits(cursor0.getPreviousPosition()),
+                                                gw.convertPixelsToWorldSpaceUnits(cursor0.getPreviousPosition()),
+                                                gw.convertPixelsToWorldSpaceUnits(cursor0.getCurrentPosition()),
+                                                gw.convertPixelsToWorldSpaceUnits(cursor0.getCurrentPosition())
+                                        );
+                                    }
+                                }
+
+
 
 							}
 							else if (type == MotionEvent.ACTION_UP) {
