@@ -474,9 +474,11 @@ public class DrawingView extends View {
 								for (int i = 0; i < selectedShapes.size(); i++) {
 									Shape shape = selectedShapes.get(i);
 
-									Point2DUtil.transformPointsBasedOnDisplacementOfOnePoint(
+									Point2DUtil.transformPointsBasedOnDisplacementOfTwoPoints(
 											shape.getPoints(),
 											gw.convertPixelsToWorldSpaceUnits(cursor0.getPreviousPosition()),
+											gw.convertPixelsToWorldSpaceUnits(cursor0.getPreviousPosition()),
+											gw.convertPixelsToWorldSpaceUnits(cursor0.getCurrentPosition()),
 											gw.convertPixelsToWorldSpaceUnits(cursor0.getCurrentPosition())
 									);
 								}
